@@ -857,16 +857,16 @@ class _MhmInfoPageState extends State<MhmInfoPage> {
         _buildDownloadCard(
   context,
   "Complete Guide to Menstrual Health",
-  "Everything you need to know about your cycle",
+  "Comprehensive menstrual health and hygiene guidance by UNICEF",
   "2.3 MB",
-  "https://www.education.go.ug/wp-content/uploads/2023/09/Menstrual-Health-Guidelines.pdf",
+  "https://www.unicef.org/media/91341/file/Guidance%20on%20Menstrual%20Health%20and%20Hygiene%202019.pdf",
   "menstrual_health.pdf",
 ),
 
 _buildDownloadCard(
   context,
   "Nutrition & Exercise Tips",
-  "How diet and activity influence menstrual cycle phases",
+  "Scientific insights on how diet and physical activity affect menstrual cycles",
   "1.8 MB",
   "https://www.ncbi.nlm.nih.gov/pmc/articles/PMC6775480/pdf/biolsport-14-4-251.pdf",
   "nutrition_tips.pdf",
@@ -874,26 +874,27 @@ _buildDownloadCard(
 
 _buildDownloadCard(
   context,
-  "Hygiene Best Practices",
-  "Stay healthy and safe during your period",
-  "3.0 MB",
-  "https://www.unicef.org/sites/default/files/2019-04/UNICEF-Guidance-menstrual-health-hygiene-2019.pdf",
-  "hygiene.pdf",
+  "Understanding the Menstrual Cycle",
+  "Phases, hormones, and safe/unsafe days",
+  "1.2 MB",
+  "https://www.gynaecologyjournal.com/articles/1581/9-1-177-180.pdf",
+  "menstrual_cycle.pdf",
 ),
 
 _buildDownloadCard(
   context,
-  "Understanding Fertility",
-  "Learn about ovulation and fertile windows",
-  "2.0 MB",
-  "https://academic.oup.com/humupd/article-pdf/31/1/21/56789012/dmae027.pdf",
-  "fertility.pdf",
+  "Hygiene Best Practices",
+  "WHO guidance on menstrual hygiene and safe practices",
+  "2.5 MB",
+  "https://apps.who.int/iris/bitstream/handle/10665/329948/9789241515630-eng.pdf",
+  "hygiene.pdf",
 ),
+
 
 _buildDownloadCard(
   context,
   "Mental Health & Periods",
-  "Coping with mood changes and emotional health",
+  "BMJ Mental Health journal article on emotional wellbeing during menstrual cycles",
   "1.5 MB",
   "https://mentalhealth.bmj.com/content/28/1/1.full.pdf",
   "mental_health.pdf",
