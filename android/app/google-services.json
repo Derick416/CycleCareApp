@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "201054047195",
+    "project_id": "cycle-care-39a04",
+    "storage_bucket": "cycle-care-39a04.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:201054047195:android:f2a5da27eeb9e89db635fe",
+        "android_client_info": {
+          "package_name": "com.example.myapp"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCk90oh6DnhhB1sdHSXcdThKfpjvu2qpJo"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
