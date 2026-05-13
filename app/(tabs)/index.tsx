@@ -1,98 +1,171 @@
-import { Image } from 'expo-image';
-import { Platform, StyleSheet } from 'react-native';
+import React, { useState } from 'react';
+import {
+  View, Text, TouchableOpacity, StyleSheet, ScrollView,
+} from 'react-native';
+import { Calendar, DateData } from 'react-native-calendars';
 
-import { HelloWave } from '@/components/hello-wave';
-import ParallaxScrollView from '@/components/parallax-scroll-view';
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
-import { Link } from 'expo-router';
+type DayStatus = 'Period' | 'Safe' | 'Unsafe' | 'NextPeriod';
 
-export default function HomeScreen() {
+const CYCLE_LENGTH = 28;
+
+function normalize(date: Date): string {
+  return date.toISOString().split('T')[0];
+}
+
+function getDayStatus(index: number): DayStatus {
+  if (index < 4) return 'Period';
+  if (index < 8) return 'Safe';
+  if (index < 17) return 'Unsafe';
+  return 'Safe';
+}
+
+const statusColors: Record<DayStatus | 'NextPeriod', string> = {
+  Period: '#F44336',
+  Safe: '#4CAF50',
+  Unsafe: '#FF9800',
+  NextPeriod: '#9C27B0',
+};
+
+export default function StatusPage() {
+  const [periodStart, setPeriodStart] = useState<Date | null>(null);
+  const [showPicker, setShowPicker] = useState(false);
+  const [markedDates, setMarkedDates] = useState<Record<string, any>>({});
+  const [nextPeriod, setNextPeriod] = useState<Date | null>(null);
+
+  const generateCycle = (start: Date) => {
+    const marks: Record<string, any> = {};
+
+    for (let i = 0; i < CYCLE_LENGTH; i++) {
+      const day = new Date(start);
+      day.setDate(start.getDate() + i);
+      const key = normalize(day);
+      const status = getDayStatus(i);
+      marks[key] = {
+        customStyles: {
+          container: {
+            backgroundColor: statusColors[status],
+            borderRadius: 20,
+          },
+          text: { color: '#fff', fontWeight: 'bold' },
+        },
+      };
+    }
+
+    const next = new Date(start);
+    next.setDate(start.getDate() + CYCLE_LENGTH);
+    const nextKey = normalize(next);
+    marks[nextKey] = {
+      customStyles: {
+        container: { backgroundColor: '#9C27B0', borderRadius: 20 },
+        text: { color: '#fff', fontWeight: 'bold' },
+      },
+    };
+
+    setNextPeriod(next);
+    setMarkedDates(marks);
+  };
+
+  const handleDaySelect = (day: DateData) => {
+    const date = new Date(day.dateString);
+    setPeriodStart(date);
+    generateCycle(date);
+    setShowPicker(false);
+  };
+
+  const formatDate = (d: Date) =>
+    `${d.getDate()}-${d.getMonth() + 1}-${d.getFullYear()}`;
+
   return (
-    <ParallaxScrollView
-      headerBackgroundColor={{ light: '#A1CEDC', dark: '#1D3D47' }}
-      headerImage={
-        <Image
-          source={require('@/assets/images/partial-react-logo.png')}
-          style={styles.reactLogo}
-        />
-      }>
-      <ThemedView style={styles.titleContainer}>
-        <ThemedText type="title">Welcome!</ThemedText>
-        <HelloWave />
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 1: Try it</ThemedText>
-        <ThemedText>
-          Edit <ThemedText type="defaultSemiBold">app/(tabs)/index.tsx</ThemedText> to see changes.
-          Press{' '}
-          <ThemedText type="defaultSemiBold">
-            {Platform.select({
-              ios: 'cmd + d',
-              android: 'cmd + m',
-              web: 'F12',
-            })}
-          </ThemedText>{' '}
-          to open developer tools.
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <Link href="/modal">
-          <Link.Trigger>
-            <ThemedText type="subtitle">Step 2: Explore</ThemedText>
-          </Link.Trigger>
-          <Link.Preview />
-          <Link.Menu>
-            <Link.MenuAction title="Action" icon="cube" onPress={() => alert('Action pressed')} />
-            <Link.MenuAction
-              title="Share"
-              icon="square.and.arrow.up"
-              onPress={() => alert('Share pressed')}
-            />
-            <Link.Menu title="More" icon="ellipsis">
-              <Link.MenuAction
-                title="Delete"
-                icon="trash"
-                destructive
-                onPress={() => alert('Delete pressed')}
-              />
-            </Link.Menu>
-          </Link.Menu>
-        </Link>
+    <ScrollView contentContainerStyle={styles.container}>
+      {!periodStart ? (
+        <View style={styles.centered}>
+          <TouchableOpacity
+            style={styles.startButton}
+            onPress={() => setShowPicker(!showPicker)}
+          >
+            <Text style={styles.startButtonText}>Enter Period Start Date</Text>
+          </TouchableOpacity>
 
-        <ThemedText>
-          {`Tap the Explore tab to learn more about what's included in this starter app.`}
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 3: Get a fresh start</ThemedText>
-        <ThemedText>
-          {`When you're ready, run `}
-          <ThemedText type="defaultSemiBold">npm run reset-project</ThemedText> to get a fresh{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> directory. This will move the current{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> to{' '}
-          <ThemedText type="defaultSemiBold">app-example</ThemedText>.
-        </ThemedText>
-      </ThemedView>
-    </ParallaxScrollView>
+          {showPicker && (
+            <Calendar
+              onDayPress={handleDaySelect}
+              style={styles.calendar}
+              theme={{ todayTextColor: '#FF69B4', arrowColor: '#FF69B4' }}
+            />
+          )}
+        </View>
+      ) : (
+        <View>
+          <Calendar
+            markedDates={markedDates}
+            markingType="custom"
+            style={styles.calendar}
+            theme={{ todayTextColor: '#FF69B4', arrowColor: '#FF69B4' }}
+          />
+
+          {/* Legend */}
+          <View style={styles.legend}>
+            <Text style={styles.legendTitle}>Key:</Text>
+            <View style={styles.legendRow}>
+              {[
+                { label: 'Period', color: '#F44336' },
+                { label: 'Safe', color: '#4CAF50' },
+                { label: 'Unsafe', color: '#FF9800' },
+                { label: 'Next Period', color: '#9C27B0' },
+              ].map((item) => (
+                <View key={item.label} style={styles.legendItem}>
+                  <View style={[styles.legendDot, { backgroundColor: item.color }]} />
+                  <Text style={styles.legendLabel}>{item.label}</Text>
+                </View>
+              ))}
+            </View>
+          </View>
+
+          {nextPeriod && (
+            <Text style={styles.nextPeriod}>
+              Next Expected Period: {formatDate(nextPeriod)}
+            </Text>
+          )}
+
+          <TouchableOpacity
+            style={[styles.startButton, { marginTop: 16 }]}
+            onPress={() => {
+              setPeriodStart(null);
+              setMarkedDates({});
+              setNextPeriod(null);
+            }}
+          >
+            <Text style={styles.startButtonText}>Reset / Change Date</Text>
+          </TouchableOpacity>
+        </View>
+      )}
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  titleContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
+  container: { padding: 16 },
+  centered: { alignItems: 'center', marginTop: 60 },
+  startButton: {
+    backgroundColor: '#FF69B4',
+    borderRadius: 24,
+    paddingVertical: 14,
+    paddingHorizontal: 24,
+    alignSelf: 'center',
   },
-  stepContainer: {
-    gap: 8,
-    marginBottom: 8,
-  },
-  reactLogo: {
-    height: 178,
-    width: 290,
-    bottom: 0,
-    left: 0,
-    position: 'absolute',
+  startButtonText: { color: '#fff', fontSize: 16, fontWeight: 'bold' },
+  calendar: { borderRadius: 12, marginBottom: 16 },
+  legend: { padding: 12 },
+  legendTitle: { fontWeight: 'bold', color: '#FF69B4', marginBottom: 8 },
+  legendRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 12 },
+  legendItem: { flexDirection: 'row', alignItems: 'center' },
+  legendDot: { width: 14, height: 14, borderRadius: 7, marginRight: 4 },
+  legendLabel: { fontSize: 13 },
+  nextPeriod: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#FF69B4',
+    textAlign: 'center',
+    marginTop: 12,
   },
 });
