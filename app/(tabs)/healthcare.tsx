@@ -1,102 +1,139 @@
 import React from 'react';
 import { View, Text, ScrollView, StyleSheet, TouchableOpacity } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { MaterialIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
+import { useTheme } from '../../components/ThemeContext';
 
 const resources = [
   {
-    title: 'Find a Gynecologist Near You',
+    title: 'Find a Gynecologist',
     description: 'Search for certified gynecologists in Uganda and abroad.',
-    icon: 'location' as const,
+    icon: 'person-search' as const,
+    iconBg: '#FCE4EC', iconColor: '#C2185B',
     route: '/gynecologist',
   },
   {
     title: 'International Gynecology Network',
-    description: 'Access global gynecology experts and resources.',
-    icon: 'globe' as const,
+    description: 'Access global gynecology experts and FIGO resources.',
+    icon: 'public' as const,
+    iconBg: '#E3F2FD', iconColor: '#1565C0',
     route: '/international-network',
   },
   {
     title: 'Kabale Regional Referral Hospital',
     description: 'Menstrual health and gynecology services in Kabale district.',
-    icon: 'medical' as const,
+    icon: 'local-hospital' as const,
+    iconBg: '#E8F5E9', iconColor: '#2E7D32',
     route: '/kabale-hospital',
   },
   {
-    title: 'Rugarama Hospital Kabale',
+    title: 'Rugarama Hospital',
     description: 'Community hospital offering reproductive health services.',
-    icon: 'medical' as const,
+    icon: 'healing' as const,
+    iconBg: '#FFF3E0', iconColor: '#E65100',
     route: '/rugarama-hospital',
   },
   {
-    title: "Women's Health",
-    description: 'What you need to know about your menstrual cycle',
-    icon: 'heart' as const,
+    title: "Women's Health Magazine",
+    description: "Expert advice on your cycle, body, and overall well-being.",
+    icon: 'spa' as const,
+    iconBg: '#F3E5F5', iconColor: '#7B1FA2',
     route: '/womens-health',
+  },
+  {
+    title: 'Health Resources',
+    description: 'WHO, UNICEF, CDC, and trusted menstrual health info.',
+    icon: 'article' as const,
+    iconBg: '#FCE4EC', iconColor: '#C2185B',
+    route: '/health-resources',
   },
 ];
 
 const quotes = [
-  '"Your health is your wealth — never hesitate to seek care."',
-  '"Strong women prioritize their well-being; visiting a doctor is a sign of strength."',
+  { text: 'Your health is your wealth — never hesitate to seek care.', icon: 'format-quote' as const },
+  { text: 'Visiting a doctor is a sign of strength, not weakness.', icon: 'format-quote' as const },
 ];
 
 export default function HealthcarePage() {
   const router = useRouter();
+  const { theme } = useTheme();
+  const c = theme.colors;
 
   return (
-    <ScrollView style={styles.container}>
-      <Text style={styles.sectionTitle}>Healthcare Resources</Text>
+    <ScrollView style={{ flex: 1, backgroundColor: c.background }} contentContainerStyle={{ paddingBottom: 32 }}>
+
+      {/* Header bar */}
+      <View style={[styles.headerBar, { backgroundColor: '#880E4F' }]}>
+        <MaterialIcons name="local-hospital" size={24} color="#fff" />
+        <View style={{ marginLeft: 12 }}>
+          <Text style={styles.headerTitle}>Healthcare Resources</Text>
+          <Text style={styles.headerSub}>Find care near you & worldwide</Text>
+        </View>
+      </View>
+
+      <Text style={[styles.sectionLabel, { color: c.textSecondary }]}>RESOURCES</Text>
 
       {resources.map((item) => (
         <TouchableOpacity
           key={item.title}
-          style={styles.card}
+          style={[styles.card, { backgroundColor: c.surface }]}
           onPress={() => router.push(item.route as any)}
+          activeOpacity={0.85}
         >
-          <Ionicons name={item.icon} size={26} color="#FF69B4" />
-          <View style={styles.cardText}>
-            <Text style={styles.cardTitle}>{item.title}</Text>
-            <Text style={styles.cardDesc}>{item.description}</Text>
+          <View style={[styles.iconBox, { backgroundColor: item.iconBg }]}>
+            <MaterialIcons name={item.icon} size={26} color={item.iconColor} />
           </View>
-          <Ionicons name="chevron-forward" size={18} color="#FF69B4" />
+          <View style={styles.cardText}>
+            <Text style={[styles.cardTitle, { color: c.text }]}>{item.title}</Text>
+            <Text style={[styles.cardDesc, { color: c.textSecondary }]}>{item.description}</Text>
+          </View>
+          <MaterialIcons name="chevron-right" size={20} color={c.textSecondary} />
         </TouchableOpacity>
       ))}
 
-      <Text style={styles.sectionTitle}>Advising Quotes</Text>
+      <Text style={[styles.sectionLabel, { color: c.textSecondary }]}>WORDS TO LIVE BY</Text>
       {quotes.map((q) => (
-        <Text key={q} style={styles.quote}>{q}</Text>
+        <View key={q.text} style={[styles.quoteCard, { backgroundColor: c.surfaceAlt, borderColor: c.border }]}>
+          <MaterialIcons name="format-quote" size={20} color="#C2185B" />
+          <Text style={[styles.quoteText, { color: c.textSecondary }]}>{q.text}</Text>
+        </View>
       ))}
     </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#fff' },
-  sectionTitle: { fontSize: 20, fontWeight: 'bold', padding: 16, paddingBottom: 8 },
+  headerBar: {
+    flexDirection: 'row', alignItems: 'center',
+    padding: 20, paddingTop: 28,
+  },
+  headerTitle: { fontSize: 18, fontWeight: '800', color: '#fff' },
+  headerSub: { fontSize: 11, color: 'rgba(255,255,255,0.75)', marginTop: 1 },
+
+  sectionLabel: {
+    fontSize: 11, fontWeight: '700', letterSpacing: 1.2,
+    marginHorizontal: 16, marginTop: 18, marginBottom: 10,
+  },
   card: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#fff',
-    borderRadius: 10,
-    marginHorizontal: 16,
-    marginVertical: 6,
-    padding: 14,
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOpacity: 0.08,
-    shadowRadius: 4,
-    shadowOffset: { width: 0, height: 2 },
-    gap: 12,
+    flexDirection: 'row', alignItems: 'center',
+    marginHorizontal: 16, marginBottom: 10,
+    borderRadius: 16, padding: 14, gap: 12,
+    elevation: 2, shadowColor: '#C2185B',
+    shadowOpacity: 0.06, shadowRadius: 6, shadowOffset: { width: 0, height: 2 },
+  },
+  iconBox: {
+    width: 50, height: 50, borderRadius: 14,
+    alignItems: 'center', justifyContent: 'center',
   },
   cardText: { flex: 1 },
-  cardTitle: { fontWeight: 'bold', fontSize: 15 },
-  cardDesc: { color: '#555', fontSize: 13, marginTop: 2 },
-  quote: {
-    fontStyle: 'italic',
-    color: '#888',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    fontSize: 14,
+  cardTitle: { fontSize: 14, fontWeight: '700' },
+  cardDesc: { fontSize: 12, marginTop: 2, lineHeight: 17 },
+
+  quoteCard: {
+    marginHorizontal: 16, marginBottom: 10,
+    borderRadius: 14, padding: 14,
+    flexDirection: 'row', gap: 10,
+    borderWidth: 1,
   },
+  quoteText: { flex: 1, fontSize: 13, fontStyle: 'italic', lineHeight: 19 },
 });
