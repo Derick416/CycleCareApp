@@ -5,7 +5,7 @@ import { useUsername } from '../components/UsernameContext';
 
 export default function LogoutPage() {
   const router = useRouter();
-  const { setUsername } = useUsername();
+  const { logout } = useUsername();
 
   const confirmLogout = () => {
     Alert.alert(
@@ -16,8 +16,8 @@ export default function LogoutPage() {
         {
           text: 'Log Out',
           style: 'destructive',
-          onPress: () => {
-            setUsername('');
+          onPress: async () => {
+            await logout();
             router.replace('/login');
           },
         },

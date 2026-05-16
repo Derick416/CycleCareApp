@@ -7,12 +7,12 @@ import { useUsername } from '../components/UsernameContext';
 
 export default function SignUpScreen() {
   const router = useRouter();
-  const { setUsername } = useUsername();
+  const { register } = useUsername();
   const [usernameInput, setUsernameInput] = useState('');
   const [password, setPassword] = useState('');
   const [confirm, setConfirm] = useState('');
 
-  const handleRegister = () => {
+  const handleRegister = async () => {
     if (!usernameInput.trim() || !password.trim() || !confirm.trim()) {
       Alert.alert('Error', 'Fill in all required fields');
       return;
@@ -21,8 +21,13 @@ export default function SignUpScreen() {
       Alert.alert('Error', 'Passwords do not match');
       return;
     }
-    setUsername(usernameInput.trim());
-    router.replace('/(tabs)');
+
+    try {
+      await register(usernameInput.trim(), password);
+      router.replace('/(tabs)');
+    } catch (error: any) {
+      Alert.alert('Registration failed', error.message || 'Unable to create account');
+    }
   };
 
   return (

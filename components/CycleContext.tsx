@@ -1,4 +1,6 @@
-import React, { createContext, useContext, useState } from 'react';
+import React, { createContext, useContext, useEffect, useState } from 'react';
+import { useUsername } from './UsernameContext';
+import { loadAccounts, saveAccounts } from './AccountStorage';
 
 export type CycleEntry = {
   id: string;
@@ -23,14 +25,45 @@ const CycleContext = createContext<CycleContextType>({
 });
 
 export function CycleProvider({ children }: { children: React.ReactNode }) {
+  const { username } = useUsername();
   const [entries, setEntries] = useState<CycleEntry[]>([]);
 
+  useEffect(() => {
+    const loadEntriesForUser = async () => {
+      if (!username) {
+        setEntries([]);
+        return;
+      }
+      const store = await loadAccounts();
+      const account = store.accounts.find((item) => item.username === username);
+      setEntries(account?.entries ?? []);
+    };
+    loadEntriesForUser();
+  }, [username]);
+
+  const persistEntriesForUser = async (nextEntries: CycleEntry[]) => {
+    if (!username) return;
+    const store = await loadAccounts();
+    const accounts = store.accounts.map((item) =>
+      item.username === username ? { ...item, entries: nextEntries } : item
+    );
+    await saveAccounts({ ...store, accounts });
+  };
+
   const addEntry = (entry: CycleEntry) => {
-    setEntries((prev) => [entry, ...prev]);
+    setEntries((prev) => {
+      const next = [entry, ...prev];
+      persistEntriesForUser(next);
+      return next;
+    });
   };
 
   const removeEntry = (id: string) => {
-    setEntries((prev) => prev.filter((e) => e.id !== id));
+    setEntries((prev) => {
+      const next = prev.filter((e) => e.id !== id);
+      persistEntriesForUser(next);
+      return next;
+    });
   };
 
   const latestEntry = entries.length > 0 ? entries[0] : null;

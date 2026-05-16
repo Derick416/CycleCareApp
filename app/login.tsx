@@ -1,31 +1,54 @@
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity, StyleSheet,
   ScrollView, Alert, Modal, KeyboardAvoidingView, Platform,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useUsername } from '../components/UsernameContext';
+import { loadAccounts } from '../components/AccountStorage';
 
 export default function LoginScreen() {
   const router = useRouter();
-  const { setUsername } = useUsername();
+  const { username, loading, login } = useUsername();
   const [usernameInput, setUsernameInput] = useState('');
   const [password, setPassword] = useState('');
   const [rememberMe, setRememberMe] = useState(false);
   const [forgotVisible, setForgotVisible] = useState(false);
   const [resetEmail, setResetEmail] = useState('');
+  const [savedAccounts, setSavedAccounts] = useState<string[]>([]);
 
-  const handleLogin = () => {
-    if (usernameInput.trim() && password.trim()) {
-      if (rememberMe) {
-        Alert.alert('Login Successful', 'Remember Me enabled');
-      }
-      setUsername(usernameInput.trim());
+  useEffect(() => {
+    const fetchAccounts = async () => {
+      const store = await loadAccounts();
+      setSavedAccounts(store.accounts.map((item) => item.username));
+    };
+    fetchAccounts();
+  }, []);
+
+  useEffect(() => {
+    if (!loading && username) {
       router.replace('/(tabs)');
-    } else {
-      Alert.alert('Error', 'Enter username and password');
     }
+  }, [username, loading, router]);
+
+  const handleLogin = async () => {
+    if (!usernameInput.trim() || !password.trim()) {
+      Alert.alert('Error', 'Enter username and password');
+      return;
+    }
+
+    try {
+      await login(usernameInput.trim(), password, rememberMe);
+      router.replace('/(tabs)');
+    } catch (error: any) {
+      Alert.alert('Login Failed', error.message || 'Invalid credentials');
+    }
+  };
+
+  const selectSavedAccount = (selected: string) => {
+    setUsernameInput(selected);
+    setPassword('');
   };
 
   const handleResetPassword = () => {
@@ -76,6 +99,21 @@ export default function LoginScreen() {
         <TouchableOpacity onPress={() => router.push('/signup')}>
           <Text style={styles.link}>Don't have an account? Sign up</Text>
         </TouchableOpacity>
+
+        {savedAccounts.length > 0 && (
+          <View style={styles.savedAccountsContainer}>
+            <Text style={styles.savedAccountsTitle}>Select a saved account</Text>
+            {savedAccounts.map((account) => (
+              <TouchableOpacity
+                key={account}
+                style={styles.savedAccountButton}
+                onPress={() => selectSavedAccount(account)}
+              >
+                <Text style={styles.savedAccountText}>{account}</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        )}
 
         <TouchableOpacity onPress={() => setForgotVisible(true)}>
           <Text style={styles.link}>Forgot Password?</Text>
@@ -170,6 +208,33 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginBottom: 8,
     fontSize: 15,
+  },
+  savedAccountsContainer: {
+    marginTop: 16,
+    borderTopWidth: 1,
+    borderTopColor: '#eee',
+    paddingTop: 16,
+  },
+  savedAccountsTitle: {
+    fontSize: 14,
+    fontWeight: '700',
+    marginBottom: 10,
+    textAlign: 'center',
+    color: '#333',
+  },
+  savedAccountButton: {
+    backgroundColor: '#FFF0F6',
+    borderRadius: 10,
+    paddingVertical: 12,
+    paddingHorizontal: 14,
+    marginBottom: 10,
+    borderWidth: 1,
+    borderColor: '#FFD1E8',
+  },
+  savedAccountText: {
+    textAlign: 'center',
+    color: '#C2185B',
+    fontWeight: '600',
   },
   modalOverlay: {
     flex: 1,

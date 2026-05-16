@@ -28,6 +28,7 @@ export default function RootLayout() {
             <Stack.Screen name="health-resources" options={{ headerShown: true, title: 'Health Resources', headerTintColor: '#C2185B' }} />
             <Stack.Screen name="chatbot" options={{ headerShown: true, title: 'Community ChatBot', headerTintColor: '#C2185B' }} />
             <Stack.Screen name="community-forum" options={{ headerShown: true, title: 'Community Forum', headerTintColor: '#C2185B' }} />
+            <Stack.Screen name="mhm-info" options={{ headerShown: true, title: 'MHM Info', headerTintColor: '#C2185B' }} />
             <Stack.Screen name="logout" options={{ headerShown: true, title: 'Log Out', headerTintColor: '#C2185B' }} />
           </Stack>
         </CycleProvider>

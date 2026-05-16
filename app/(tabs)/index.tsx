@@ -92,6 +92,16 @@ export default function HomePage() {
       badge: 'Coming Soon',
       isMatComm: false,
     },
+    {
+      icon: 'lightbulb' as const,
+      iconBg: '#FFF3E0',
+      iconColor: '#F57C00',
+      title: 'MHM Info',
+      desc: 'Read menstrual health guidance and access offline educational PDFs.',
+      route: '/mhm-info',
+      badge: null,
+      isMatComm: false,
+    },
   ];
 
   return (
