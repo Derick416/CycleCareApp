@@ -1,6 +1,6 @@
-import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
+import React from 'react';
+import { Alert, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useUsername } from '../components/UsernameContext';
 
 export default function LogoutPage() {
@@ -18,7 +18,8 @@ export default function LogoutPage() {
           style: 'destructive',
           onPress: async () => {
             await logout();
-            router.replace('/login');
+            // Small delay so the Alert can dismiss smoothly before navigation
+            setTimeout(() => router.replace('/login'), 200);
           },
         },
       ]

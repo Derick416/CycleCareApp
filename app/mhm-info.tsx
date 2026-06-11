@@ -1,24 +1,25 @@
-import { useEffect, useState } from 'react';
 import { Asset } from 'expo-asset';
-import * as FileSystem from 'expo-file-system';
-import { Linking, Platform, View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'react-native';
+import * as FileSystem from 'expo-file-system/legacy';
+import { useEffect, useState } from 'react';
+import { Alert, Linking, Modal, Platform, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useTheme } from '../components/ThemeContext';
 
 const STORAGE_DIR = `${FileSystem.documentDirectory}MHMInfo/`;
+const DOWNLOADS_DIR = `${FileSystem.documentDirectory}Downloads/`;
 
 const pdfItems = [
   {
-    title: 'MHM Basics',
-    description: 'What to expect during your period and how your body changes.',
-    asset: require('../assets/pdfs/mhm-basics.pdf'),
-    fileName: 'mhm-basics.pdf',
-  },
+  title: 'Menstrual Hygiene',
+  description: 'Educational booklet on menstrual hygiene practices.',
+  asset: 'https://www.pszim.com/wp-content/uploads/sites/34/2024/07/menstrual-hygiene-booklet-amend-7-12-22.pdf',
+  fileName: 'menstrual-hygiene.pdf',
+},
   {
-    title: 'Self-Care Guide',
-    description: 'Simple care tips for hydration, rest, comfort, and mood support.',
-    asset: require('../assets/pdfs/self-care-guide.pdf'),
-    fileName: 'self-care-guide.pdf',
-  },
+  title: 'Guide to menstrual hygiene',
+  description: 'UNICEF guidance on menstrual hygiene materials (2019).',
+  asset: 'https://www.unicef.org/media/91346/file/unicef-guide-menstrual-hygiene-materials-2019.pdf',
+  fileName: 'menstrual-hygiene-guide.pdf',
+},
 ];
 
 export default function MhmInfoPage() {
@@ -26,19 +27,32 @@ export default function MhmInfoPage() {
   const colors = theme.colors;
   const [downloaded, setDownloaded] = useState<Record<string, boolean>>({});
   const [loading, setLoading] = useState<Record<string, boolean>>({});
+  const [progressVisible, setProgressVisible] = useState(false);
+  const [progress, setProgress] = useState(0);
 
   useEffect(() => {
     const init = async () => {
       try {
+        // Create directories if they don't exist
         await FileSystem.makeDirectoryAsync(STORAGE_DIR, { intermediates: true });
+        await FileSystem.makeDirectoryAsync(DOWNLOADS_DIR, { intermediates: true });
+        
+        // Check which PDFs have been downloaded
         const state: Record<string, boolean> = {};
         for (const item of pdfItems) {
-          const info = await FileSystem.getInfoAsync(`${STORAGE_DIR}${item.fileName}`);
-          state[item.fileName] = info.exists;
+          // Check if file exists in Downloads folder
+          const downloadInfo = await FileSystem.getInfoAsync(getDownloadUri(item.fileName));
+          if (downloadInfo.exists) {
+            state[item.fileName] = true;
+          } else {
+            // Fallback check in local storage
+            const storageInfo = await FileSystem.getInfoAsync(`${STORAGE_DIR}${item.fileName}`);
+            state[item.fileName] = storageInfo.exists;
+          }
         }
         setDownloaded(state);
-      } catch {
-        // ignore initialization errors
+      } catch (error) {
+        console.error('Initialization error:', error);
       }
     };
 
@@ -46,6 +60,7 @@ export default function MhmInfoPage() {
   }, []);
 
   const getStoredUri = (fileName: string) => `${STORAGE_DIR}${fileName}`;
+  const getDownloadUri = (fileName: string) => `${DOWNLOADS_DIR}${fileName}`;
 
   const storePdfLocally = async (item: (typeof pdfItems)[number]) => {
     setLoading((prev) => ({ ...prev, [item.fileName]: true }));
@@ -71,6 +86,78 @@ export default function MhmInfoPage() {
     }
   };
 
+  const downloadPdfToDevice = async (item: (typeof pdfItems)[number]) => {
+    setLoading((prev) => ({ ...prev, [item.fileName]: true }));
+    setProgress(0);
+    setProgressVisible(true);
+    try {
+      const asset = Asset.fromModule(item.asset);
+      // step 1: ensure asset is downloaded
+      await asset.downloadAsync();
+      setProgress(20);
+
+      const sourceUri = asset.localUri || asset.uri;
+      if (!sourceUri) throw new Error('Unable to load PDF asset');
+
+      if (Platform.OS === 'android' && FileSystem.StorageAccessFramework) {
+        // Ask user to pick a directory (they can choose Downloads)
+        const permission = await FileSystem.StorageAccessFramework.requestDirectoryPermissionsAsync();
+        if (!permission.granted) {
+          Alert.alert('Permission required', 'Please select a folder to save the file.');
+          return;
+        }
+        const directoryUri = permission.directoryUri;
+        setProgress(40);
+
+        // create file in selected directory
+        const safUri = await FileSystem.StorageAccessFramework.createFileAsync(directoryUri, item.fileName, 'application/pdf');
+        setProgress(60);
+
+        // read asset as base64 and write via SAF
+        const base64 = await FileSystem.readAsStringAsync(sourceUri, { encoding: FileSystem.EncodingType.Base64 });
+        setProgress(80);
+
+        await FileSystem.writeAsStringAsync(safUri, base64, { encoding: FileSystem.EncodingType.Base64 });
+        setProgress(100);
+
+        setDownloaded((prev) => ({ ...prev, [item.fileName]: true }));
+        Alert.alert('Download Complete', `${item.title} has been saved to the folder you selected.`, [
+          { text: 'Open File', onPress: () => openPdf(item) },
+          { text: 'Done', style: 'cancel' },
+        ]);
+        return safUri;
+      }
+
+      // Fallback for other platforms: copy to app Downloads directory
+      try {
+        await FileSystem.makeDirectoryAsync(DOWNLOADS_DIR, { intermediates: true });
+      } catch {}
+      const downloadUri = getDownloadUri(item.fileName);
+      const existing = await FileSystem.getInfoAsync(downloadUri);
+      if (existing.exists) await FileSystem.deleteAsync(downloadUri);
+
+      // read and write (using base64 to keep behavior consistent)
+      const base64 = await FileSystem.readAsStringAsync(sourceUri, { encoding: FileSystem.EncodingType.Base64 });
+      setProgress(70);
+      await FileSystem.writeAsStringAsync(downloadUri, base64, { encoding: FileSystem.EncodingType.Base64 });
+      setProgress(100);
+
+      setDownloaded((prev) => ({ ...prev, [item.fileName]: true }));
+      Alert.alert('Download Complete', `${item.title} has been saved to your device.`);
+      return downloadUri;
+    } catch (error) {
+      console.error('Download error:', error);
+      const errorMsg = error instanceof Error ? error.message : 'Unknown error occurred';
+      Alert.alert('Download Failed', `Error: ${errorMsg}`);
+    } finally {
+      setLoading((prev) => ({ ...prev, [item.fileName]: false }));
+      setTimeout(() => {
+        setProgressVisible(false);
+        setProgress(0);
+      }, 700);
+    }
+  };
+
   const openPdf = async (item: (typeof pdfItems)[number]) => {
     try {
       const storedUri = getStoredUri(item.fileName);
@@ -79,7 +166,7 @@ export default function MhmInfoPage() {
 
       if (Platform.OS === 'android') {
         const contentUri = await FileSystem.getContentUriAsync(uri);
-        await Linking.openURL(contentUri.uri);
+        await Linking.openURL(contentUri);
       } else {
         await Linking.openURL(uri);
       }
@@ -89,8 +176,9 @@ export default function MhmInfoPage() {
   };
 
   return (
-    <ScrollView style={[styles.container, { backgroundColor: colors.background }]} contentContainerStyle={styles.content}>
-      <Text style={[styles.heading, { color: colors.text }]}>MHM Info</Text>
+    <>
+      <ScrollView style={[styles.container, { backgroundColor: colors.background }]} contentContainerStyle={styles.content}>
+        <Text style={[styles.heading, { color: colors.text }]}>MHM Info</Text>
       <Text style={[styles.subheading, { color: colors.textSecondary }]}>Menstrual health guidance for what to expect during your period and how to care for yourself.</Text>
 
       <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}> 
@@ -118,22 +206,49 @@ export default function MhmInfoPage() {
             <View style={styles.pdfInfo}>
               <Text style={[styles.pdfTitle, { color: colors.text }]}>{item.title}</Text>
               <Text style={[styles.pdfDescription, { color: colors.textSecondary }]}>{item.description}</Text>
-              {isDownloaded && <Text style={[styles.downloadLabel, { color: colors.textSecondary }]}>Saved locally</Text>}
+              {isDownloaded && <Text style={[styles.downloadLabel, { color: colors.textSecondary }]}>Downloaded to Downloads folder</Text>}
             </View>
-            <TouchableOpacity
-              style={[styles.pdfButton, { backgroundColor: '#F48FB1' }]}
-              onPress={() => openPdf(item)}
-              activeOpacity={0.82}
-              disabled={isLoading}
-            >
-              <Text style={styles.pdfButtonText}>{isLoading ? 'Loading...' : isDownloaded ? 'Open' : 'Download'}</Text>
-            </TouchableOpacity>
+            <View style={styles.buttonContainer}>
+              <TouchableOpacity
+                style={[styles.pdfButton, { backgroundColor: '#F48FB1', flex: 1 }]}
+                onPress={() => downloadPdfToDevice(item)}
+                activeOpacity={0.82}
+                disabled={isLoading}
+              >
+                <Text style={styles.pdfButtonText}>{isLoading ? 'Downloading...' : 'Download'}</Text>
+              </TouchableOpacity>
+              {isDownloaded && (
+                <TouchableOpacity
+                  style={[styles.pdfButton, { backgroundColor: '#9575CD', marginLeft: 10, flex: 1 }]}
+                  onPress={() => openPdf(item)}
+                  activeOpacity={0.82}
+                  disabled={isLoading}
+                >
+                  <Text style={styles.pdfButtonText}>Open</Text>
+                </TouchableOpacity>
+              )}
+            </View>
           </View>
         );
       })}
 
       <Text style={[styles.footerText, { color: colors.textSecondary }]}>Downloaded files are stored locally for offline access.</Text>
     </ScrollView>
+
+    {progressVisible && (
+      <Modal transparent animationType="fade" visible={progressVisible}>
+        <View style={styles.progressOverlay}>
+          <View style={styles.progressBox}>
+            <Text style={styles.progressTitle}>Downloading</Text>
+            <View style={styles.progressBarBackground}>
+              <View style={[styles.progressBarFill, { width: `${progress}%` }]} />
+            </View>
+            <Text style={styles.progressText}>{progress}%</Text>
+          </View>
+        </View>
+      </Modal>
+    )}
+  </>
   );
 }
 
@@ -198,6 +313,11 @@ const styles = StyleSheet.create({
     marginTop: 8,
     fontSize: 12,
   },
+  buttonContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
   pdfButton: {
     borderRadius: 14,
     alignItems: 'center',
@@ -214,5 +334,39 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginTop: 18,
     opacity: 0.85,
+  },
+  progressOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.45)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  progressBox: {
+    width: '80%',
+    backgroundColor: '#fff',
+    padding: 18,
+    borderRadius: 12,
+    alignItems: 'center',
+  },
+  progressTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    marginBottom: 12,
+  },
+  progressBarBackground: {
+    width: '100%',
+    height: 10,
+    backgroundColor: '#eee',
+    borderRadius: 6,
+    overflow: 'hidden',
+  },
+  progressBarFill: {
+    height: '100%',
+    backgroundColor: '#F48FB1',
+  },
+  progressText: {
+    marginTop: 10,
+    fontSize: 14,
+    fontWeight: '600',
   },
 });

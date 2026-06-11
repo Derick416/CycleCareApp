@@ -1,9 +1,13 @@
-import React from 'react';
-import {
-  View, Text, ScrollView, StyleSheet, TouchableOpacity, Switch, Alert,
-} from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
+import React from 'react';
+import {
+    ScrollView, StyleSheet,
+    Switch,
+    Text,
+    TouchableOpacity,
+    View
+} from 'react-native';
 import { useTheme } from '../../components/ThemeContext';
 import { useUsername } from '../../components/UsernameContext';
 
@@ -136,9 +140,7 @@ export default function SettingsPage() {
         <Text style={styles.logoutText}>Log Out</Text>
       </TouchableOpacity>
 
-      <Text style={[styles.footerNote, { color: c.textSecondary }]}>
-        Made with 💗 for women's health
-      </Text>
+      <Text style={[styles.footerNote, { color: c.textSecondary }]}>{"Made with 💗 for women's health"}</Text>
     </ScrollView>
   );
 }

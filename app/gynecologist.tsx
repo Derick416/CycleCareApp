@@ -1,23 +1,23 @@
-import React from 'react';
-import { View, Text, ScrollView, StyleSheet, TouchableOpacity, Linking } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import React from 'react';
+import { Linking, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 const doctors = [
   {
     name: 'Dr. Sarah Nansubuga',
     subtitle: 'Specialist in reproductive health, Kampala',
+    details:
+      'Dr. Nansubuga provides routine gynecological checkups, menstrual disorder support, family planning guidance, and counseling on fertility and preventive screening.',
     phone: '+256772123456',
     phoneDisplay: '+256 772 123456',
-    website: 'https://www.medpages.info/specialists/gynecologists',
-    websiteLabel: 'Medpages Directory',
   },
   {
     name: 'Dr. James Okello',
     subtitle: 'Obstetrician/Gynecologist, Entebbe',
+    details:
+      'Dr. Okello specializes in prenatal and postnatal care, pelvic health concerns, pregnancy monitoring, and compassionate support for women seeking reproductive healthcare.',
     phone: '+256701654321',
     phoneDisplay: '+256 701 654321',
-    website: 'https://www.medpages.info/specialists/gynecologists',
-    websiteLabel: 'Medpages Directory',
   },
 ];
 
@@ -33,11 +33,9 @@ export default function GynecologistPage() {
           <View style={styles.info}>
             <Text style={styles.name}>{doc.name}</Text>
             <Text style={styles.subtitle}>{doc.subtitle}</Text>
+            <Text style={styles.details}>{doc.details}</Text>
             <TouchableOpacity onPress={() => Linking.openURL(`tel:${doc.phone}`)}>
-              <Text style={styles.link}>📞 {doc.phoneDisplay}</Text>
-            </TouchableOpacity>
-            <TouchableOpacity onPress={() => Linking.openURL(doc.website)}>
-              <Text style={styles.link}>🌐 {doc.websiteLabel}</Text>
+              <Text style={styles.phone}>📞 {doc.phoneDisplay}</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -65,6 +63,7 @@ const styles = StyleSheet.create({
   },
   info: { flex: 1 },
   name: { fontWeight: 'bold', fontSize: 16, marginBottom: 2 },
-  subtitle: { color: '#666', fontSize: 13, marginBottom: 6 },
-  link: { color: '#2196F3', fontSize: 13, marginTop: 4, textDecorationLine: 'underline' },
+  subtitle: { color: '#666', fontSize: 13, marginBottom: 4 },
+  details: { color: '#555', fontSize: 13, lineHeight: 18, marginBottom: 6 },
+  phone: { color: '#2196F3', fontSize: 13, marginTop: 4, textDecorationLine: 'none' },
 });

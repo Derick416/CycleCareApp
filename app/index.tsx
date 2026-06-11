@@ -1,32 +1,37 @@
 import { useRouter } from 'expo-router';
+import * as SplashScreen from 'expo-splash-screen';
 import { useEffect, useRef } from 'react';
 import { Animated, Image, StyleSheet, Text, View } from 'react-native';
 
-export default function SplashScreen() {
+export default function SplashPage() {
   const router = useRouter();
   const opacity = useRef(new Animated.Value(0)).current;
   const scale = useRef(new Animated.Value(0.8)).current;
 
   useEffect(() => {
+    const duration = 800;
+
     Animated.parallel([
       Animated.timing(opacity, {
         toValue: 1,
-        duration: 2000,
+        duration,
         useNativeDriver: true,
       }),
       Animated.timing(scale, {
         toValue: 1,
-        duration: 2000,
+        duration,
         useNativeDriver: true,
       }),
-    ]).start();
-
-    const timer = setTimeout(() => {
-      router.replace('/login');
-    }, 5000);
-
-    return () => clearTimeout(timer);
-  }, []);
+    ]).start(() => {
+      SplashScreen.hideAsync()
+        .catch(() => {
+          // Ignore if splash screen was already hidden.
+        })
+        .finally(() => {
+          router.replace('/login');
+        });
+    });
+  }, [router, opacity, scale]);
 
   return (
     <View style={styles.container}>
@@ -37,7 +42,7 @@ export default function SplashScreen() {
           resizeMode="contain"
         />
       </Animated.View>
-      <Text style={styles.title}>WOMEN'S HEALTH</Text>
+      <Text style={styles.title}>{"WOMEN'S HEALTH"}</Text>
       <Text style={styles.subtitle}>Stay updated about your reproductive health</Text>
     </View>
   );

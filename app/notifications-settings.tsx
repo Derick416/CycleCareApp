@@ -1,10 +1,19 @@
-import React, { useState, useEffect } from 'react';
-import {
-  View, Text, ScrollView, StyleSheet, Switch, TouchableOpacity, Alert, Platform,
-} from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
+import * as Device from 'expo-device';
 import * as Notifications from 'expo-notifications';
+import React, { useEffect, useState } from 'react';
+import {
+  Alert,
+  Platform,
+  ScrollView, StyleSheet, Switch,
+  Text,
+  TouchableOpacity,
+  View
+} from 'react-native';
+import { DEFAULT_NOTIFICATION_PREFERENCES, loadAccounts, saveAccounts } from '../components/AccountStorage';
+import { useCycle } from '../components/CycleContext';
 import { useTheme } from '../components/ThemeContext';
+import { useUsername } from '../components/UsernameContext';
 
 // Handle notifications while app is foregrounded
 Notifications.setNotificationHandler({
@@ -12,11 +21,15 @@ Notifications.setNotificationHandler({
     shouldShowAlert: true,
     shouldPlaySound: true,
     shouldSetBadge: false,
+    shouldShowBanner: true,
+    shouldShowList: true,
   }),
 });
 
 export default function NotificationsPage() {
   const { theme } = useTheme();
+  const { latestEntry } = useCycle();
+  const { username } = useUsername();
   const c = theme.colors;
 
   const [permGranted, setPermGranted] = useState(false);
@@ -26,16 +39,66 @@ export default function NotificationsPage() {
   const [dailyLog, setDailyLog] = useState(false);
   const [daysBefore, setDaysBefore] = useState(2);
 
+  const periodStart = latestEntry ? new Date(latestEntry.periodStart) : null;
+  const nextPeriod = latestEntry ? new Date(latestEntry.nextPeriod) : null;
+
   useEffect(() => {
-    checkPermission();
+    const prepareNotifications = async () => {
+      if (Platform.OS === 'android') {
+        await Notifications.setNotificationChannelAsync('cyclecare-reminders', {
+          name: 'CycleCare Reminders',
+          importance: Notifications.AndroidImportance.MAX,
+          vibrationPattern: [0, 250, 250, 250],
+          sound: 'default',
+        });
+      }
+
+      if (!Device.isDevice) {
+        setPermGranted(false);
+        return;
+      }
+
+      await checkPermission();
+    };
+
+    prepareNotifications();
   }, []);
 
+  useEffect(() => {
+    const loadPreferences = async () => {
+      if (!username) return;
+      const store = await loadAccounts();
+      const account = store.accounts.find((item) => item.username === username);
+      const prefs = account?.notificationPreferences ?? DEFAULT_NOTIFICATION_PREFERENCES;
+      setPeriodReminder(prefs.periodReminder);
+      setFertileAlert(prefs.fertileAlert);
+      setOvulationReminder(prefs.ovulationReminder);
+      setDailyLog(prefs.dailyLog);
+      setDaysBefore(prefs.daysBefore);
+    };
+
+    loadPreferences();
+  }, [username]);
+
   const checkPermission = async () => {
+    if (!Device.isDevice) {
+      setPermGranted(false);
+      return;
+    }
+
     const { status } = await Notifications.getPermissionsAsync();
     setPermGranted(status === 'granted');
   };
 
   const requestPermission = async () => {
+    if (!Device.isDevice) {
+      Alert.alert(
+        'Notifications Unsupported',
+        'Notification permissions can only be requested on a real device.',
+      );
+      return false;
+    }
+
     const { status } = await Notifications.requestPermissionsAsync();
     setPermGranted(status === 'granted');
     if (status !== 'granted') {
@@ -50,49 +113,135 @@ export default function NotificationsPage() {
   const sendTestNotification = async () => {
     const granted = permGranted || (await requestPermission());
     if (!granted) return;
-    await Notifications.scheduleNotificationAsync({
-      content: {
-        title: '🌸 CycleCare',
-        body: 'This is a test reminder from CycleCare!',
-        sound: true,
-      },
-      trigger: { seconds: 3 },
-    });
-    Alert.alert('Test Sent ✓', 'You will receive a notification in 3 seconds.');
+
+    if (!Device.isDevice) {
+      Alert.alert('Unsupported', 'Test notifications are only available on a real device.');
+      return;
+    }
+
+    if (Platform.OS === 'android') {
+      await Notifications.setNotificationChannelAsync('cyclecare-reminders', {
+        name: 'CycleCare Reminders',
+        importance: Notifications.AndroidImportance.MAX,
+        vibrationPattern: [0, 250, 250, 250],
+        sound: 'default',
+      });
+    }
+
+    Alert.alert('Test Sent ✓', 'You will receive a notification in 2 seconds.');
+
+    try {
+      await Notifications.scheduleNotificationAsync({
+        content: {
+          title: '🌸 CycleCare',
+          body: 'This is a test reminder from CycleCare!',
+          sound: 'default',
+        },
+        trigger: {
+          type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL,
+          seconds: 2,
+          repeats: false,
+        },
+      });
+    } catch (error) {
+      console.error('Failed to schedule test notification:', error);
+      Alert.alert('Unable to send test notification', 'Please try again.');
+    }
   };
 
   const handleSave = async () => {
     const granted = permGranted || (await requestPermission());
     if (!granted) return;
 
+    if (!latestEntry && (periodReminder || fertileAlert || ovulationReminder)) {
+      Alert.alert(
+        'Save Cycle Data First',
+        'Add your period start date in Period Tracker to enable cycle-based reminders.',
+      );
+      return;
+    }
+
     // Cancel all existing local notifications before rescheduling
     await Notifications.cancelAllScheduledNotificationsAsync();
+
+    const scheduleAt = async (date: Date, title: string, body: string) => {
+      if (date <= new Date()) {
+        date = new Date(Date.now() + 10 * 1000);
+      }
+      await Notifications.scheduleNotificationAsync({
+        content: { title, body, sound: 'default' },
+        trigger: {
+          type: Notifications.SchedulableTriggerInputTypes.DATE,
+          date,
+        },
+      });
+    };
 
     if (dailyLog) {
       await Notifications.scheduleNotificationAsync({
         content: {
           title: '📝 Daily Log Reminder',
           body: "Don't forget to log your symptoms today!",
-          sound: true,
+          sound: 'default',
         },
         trigger: {
+          type: Notifications.SchedulableTriggerInputTypes.DAILY,
           hour: 20,
           minute: 0,
-          repeats: true,
         },
       });
     }
 
-    if (periodReminder) {
-      // Schedule a sample reminder (in a real app this would use the saved cycle date)
-      await Notifications.scheduleNotificationAsync({
-        content: {
-          title: '🌸 Period Coming Soon',
-          body: `Your period may start in about ${daysBefore} day(s). Prepare your supplies!`,
-          sound: true,
-        },
-        trigger: { seconds: 5 }, // placeholder — real app uses cycle date
-      });
+    if (periodReminder && nextPeriod) {
+      const reminderDate = new Date(nextPeriod);
+      reminderDate.setDate(reminderDate.getDate() - daysBefore);
+      reminderDate.setHours(9, 0, 0, 0);
+      await scheduleAt(
+        reminderDate,
+        '🌸 Period Reminder',
+        `Your period may start in about ${daysBefore} day(s). Prepare your supplies!`,
+      );
+    }
+
+    if (fertileAlert && periodStart) {
+      const fertileDate = new Date(periodStart);
+      fertileDate.setDate(fertileDate.getDate() + 9);
+      fertileDate.setHours(9, 0, 0, 0);
+      await scheduleAt(
+        fertileDate,
+        '🌿 Fertile Window Alert',
+        'Your fertile window starts today. Stay mindful of your cycle.',
+      );
+    }
+
+    if (ovulationReminder && periodStart) {
+      const ovulationDate = new Date(periodStart);
+      ovulationDate.setDate(ovulationDate.getDate() + 14);
+      ovulationDate.setHours(9, 0, 0, 0);
+      await scheduleAt(
+        ovulationDate,
+        '☀️ Ovulation Reminder',
+        'Today is your estimated ovulation day. Pay attention to your body and stay hydrated.',
+      );
+    }
+
+    if (username) {
+      const store = await loadAccounts();
+      const accounts = store.accounts.map((item) =>
+        item.username === username
+          ? {
+              ...item,
+              notificationPreferences: {
+                periodReminder,
+                fertileAlert,
+                ovulationReminder,
+                dailyLog,
+                daysBefore,
+              },
+            }
+          : item,
+      );
+      await saveAccounts({ ...store, accounts });
     }
 
     Alert.alert('Settings Saved ✓', 'Your notification preferences have been saved.');

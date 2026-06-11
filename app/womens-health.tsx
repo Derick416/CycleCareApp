@@ -1,15 +1,15 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Linking } from 'react-native';
+import { Linking, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 export default function WomensHealthPage() {
   return (
     <View style={styles.container}>
-      <Text style={styles.label}>Click to open Women's Health Website</Text>
+      <Text style={styles.label}>{"Click to open Women's Health Website"}</Text>
       <TouchableOpacity
         style={styles.button}
         onPress={() => Linking.openURL('https://www.womenshealthmag.com/')}
       >
-        <Text style={styles.buttonText}>Open Women's Health Website</Text>
+        <Text style={styles.buttonText}>{"Open Women's Health Website"}</Text>
       </TouchableOpacity>
     </View>
   );

@@ -1,4 +1,4 @@
-%PDF-1.1
+%PDF-1.4
 1 0 obj
 << /Type /Catalog /Pages 2 0 R >>
 endobj
@@ -9,13 +9,35 @@ endobj
 << /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Contents 4 0 R /Resources << /Font << /F1 5 0 R >> >> >>
 endobj
 4 0 obj
-<< /Length 101 >>
+<< /Length 648 >>
 stream
 BT
 /F1 18 Tf
-72 740 Td
-(What to expect: period length, flow changes, cramps, and mood swings.) Tj
+50 740 Td
+(MHM Basics) Tj
 ET
+BT
+/F1 12 Tf
+50 720 Td
+(Understanding your menstrual cycle is essential for self-care.) Tj
+0 -18 Td
+(This guide explains the phases of the cycle and how to manage symptoms.) Tj
+0 -18 Td
+() Tj
+0 -18 Td
+(- Menstrual phase: bleeding starts and hormone levels drop.) Tj
+0 -18 Td
+(- Follicular phase: the body prepares an egg with rising estrogen.) Tj
+0 -18 Td
+(- Ovulation: the egg is released and fertility is highest.) Tj
+0 -18 Td
+(- Luteal phase: hormone levels change preparing the uterus for pregnancy.) Tj
+0 -18 Td
+() Tj
+0 -18 Td
+(Track your symptoms, stay hydrated, and seek support when needed.) Tj
+ET
+
 endstream
 endobj
 5 0 obj
@@ -24,14 +46,13 @@ endobj
 xref
 0 6
 0000000000 65535 f 
+0000000010 00000 n 
+0000000056 00000 n 
+0000000111 00000 n 
+0000000200 00000 n 
 0000000000 00000 n 
-0000000009 00000 n 
-0000000058 00000 n 
-0000000115 00000 n 
-0000000241 00000 n 
-0000000392 00000 n 
 trailer
 << /Size 6 /Root 1 0 R >>
 startxref
-462
+1183
 %%EOF

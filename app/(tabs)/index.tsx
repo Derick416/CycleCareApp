@@ -1,12 +1,20 @@
+import { MaterialCommunityIcons, MaterialIcons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
 import React from 'react';
 import {
-  View, Text, ScrollView, StyleSheet, TouchableOpacity, Image, StatusBar, Share, Alert,
+    Alert,
+    Image,
+    ScrollView,
+    Share,
+    StatusBar,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
 } from 'react-native';
-import { MaterialIcons, MaterialCommunityIcons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
-import { useUsername } from '../../components/UsernameContext';
-import { useTheme } from '../../components/ThemeContext';
 import { useCycle } from '../../components/CycleContext';
+import { useTheme } from '../../components/ThemeContext';
+import { useUsername } from '../../components/UsernameContext';
 
 const TODAY = new Date().toISOString().split('T')[0];
 
@@ -46,7 +54,7 @@ export default function HomePage() {
           '🌸 Hey! I\'m using CycleCare to track my menstrual health. It\'s really helpful — you should try it too! Download it now.',
         title: 'Invite to CycleCare',
       });
-    } catch (e) {
+    } catch {
       Alert.alert('Could not share', 'Please try again.');
     }
   };

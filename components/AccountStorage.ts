@@ -1,11 +1,29 @@
 import * as FileSystem from 'expo-file-system';
 import { CycleEntry } from './CycleContext';
 
+export type NotificationPreferences = {
+  periodReminder: boolean;
+  fertileAlert: boolean;
+  ovulationReminder: boolean;
+  dailyLog: boolean;
+  daysBefore: number;
+};
+
+export const DEFAULT_NOTIFICATION_PREFERENCES: NotificationPreferences = {
+  periodReminder: true,
+  fertileAlert: true,
+  ovulationReminder: false,
+  dailyLog: false,
+  daysBefore: 2,
+};
+
 export type StoredAccount = {
   username: string;
+  email?: string;
   password: string;
   entries: CycleEntry[];
   createdAt: string;
+  notificationPreferences: NotificationPreferences;
 };
 
 export type StoredAccounts = {
@@ -13,7 +31,7 @@ export type StoredAccounts = {
   lastLogin?: string;
 };
 
-const ACCOUNTS_FILE = `${FileSystem.documentDirectory}accounts.json`;
+const ACCOUNTS_FILE = `${FileSystem.Paths.document.uri}accounts.json`;
 
 const defaultStore: StoredAccounts = {
   accounts: [],
@@ -47,6 +65,17 @@ export async function updateAccount(account: StoredAccount): Promise<void> {
   const store = await loadAccounts();
   const accounts = store.accounts.filter((item) => item.username !== account.username);
   accounts.unshift(account);
+  await saveAccounts({ ...store, accounts });
+}
+
+export async function updateAccountPreferences(
+  username: string,
+  preferences: NotificationPreferences,
+): Promise<void> {
+  const store = await loadAccounts();
+  const accounts = store.accounts.map((item) =>
+    item.username === username ? { ...item, notificationPreferences: preferences } : item,
+  );
   await saveAccounts({ ...store, accounts });
 }
 

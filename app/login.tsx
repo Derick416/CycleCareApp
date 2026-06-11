@@ -1,19 +1,29 @@
 
+import { MaterialIcons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import {
-  View, Text, TextInput, TouchableOpacity, StyleSheet,
-  ScrollView, Alert, Modal, KeyboardAvoidingView, Platform,
+  Alert,
+  KeyboardAvoidingView,
+  Modal,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from 'react-native';
-import { useRouter } from 'expo-router';
-import { useUsername } from '../components/UsernameContext';
 import { loadAccounts } from '../components/AccountStorage';
+import { useUsername } from '../components/UsernameContext';
 
 export default function LoginScreen() {
   const router = useRouter();
-  const { username, loading, login } = useUsername();
+  const { login } = useUsername();
   const [usernameInput, setUsernameInput] = useState('');
   const [password, setPassword] = useState('');
   const [rememberMe, setRememberMe] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const [forgotVisible, setForgotVisible] = useState(false);
   const [resetEmail, setResetEmail] = useState('');
   const [savedAccounts, setSavedAccounts] = useState<string[]>([]);
@@ -26,11 +36,9 @@ export default function LoginScreen() {
     fetchAccounts();
   }, []);
 
-  useEffect(() => {
-    if (!loading && username) {
-      router.replace('/(tabs)');
-    }
-  }, [username, loading, router]);
+  // Do not auto-redirect from login based on stored username. The splash screen
+  // should always navigate to the login screen first, and users must explicitly
+  // log in using their credentials (or select a saved account and provide a password).
 
   const handleLogin = async () => {
     if (!usernameInput.trim() || !password.trim()) {
@@ -45,6 +53,8 @@ export default function LoginScreen() {
       Alert.alert('Login Failed', error.message || 'Invalid credentials');
     }
   };
+
+
 
   const selectSavedAccount = (selected: string) => {
     setUsernameInput(selected);
@@ -76,13 +86,25 @@ export default function LoginScreen() {
           onChangeText={setUsernameInput}
           autoCapitalize="none"
         />
-        <TextInput
-          style={styles.input}
-          placeholder="Password"
-          value={password}
-          onChangeText={setPassword}
-          secureTextEntry
-        />
+        <View style={styles.passwordRow}>
+          <TextInput
+            style={[styles.input, styles.passwordInput]}
+            placeholder="Password"
+            value={password}
+            onChangeText={setPassword}
+            secureTextEntry={!showPassword}
+          />
+          <TouchableOpacity
+            style={styles.passwordToggle}
+            onPress={() => setShowPassword((prev) => !prev)}
+          >
+            <MaterialIcons
+              name={showPassword ? 'visibility-off' : 'visibility'}
+              size={24}
+              color="#FF69B4"
+            />
+          </TouchableOpacity>
+        </View>
 
         <TouchableOpacity
           style={styles.checkboxRow}
@@ -97,8 +119,10 @@ export default function LoginScreen() {
         </TouchableOpacity>
 
         <TouchableOpacity onPress={() => router.push('/signup')}>
-          <Text style={styles.link}>Don't have an account? Sign up</Text>
+          <Text style={styles.link}>{"Don't have an account? Sign up"}</Text>
         </TouchableOpacity>
+
+        
 
         {savedAccounts.length > 0 && (
           <View style={styles.savedAccountsContainer}>
@@ -208,6 +232,24 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginBottom: 8,
     fontSize: 15,
+  },
+  passwordRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  passwordInput: {
+    flex: 1,
+    marginBottom: 0,
+  },
+  passwordToggle: {
+    marginLeft: 10,
+    paddingVertical: 12,
+    paddingHorizontal: 10,
+  },
+  passwordToggleText: {
+    color: '#FF69B4',
+    fontWeight: '600',
   },
   savedAccountsContainer: {
     marginTop: 16,

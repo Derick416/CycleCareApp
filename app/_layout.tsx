@@ -1,9 +1,23 @@
 import { Stack } from 'expo-router';
-import { UsernameProvider } from '../components/UsernameContext';
-import { ThemeProvider } from '../components/ThemeContext';
+import * as SplashScreen from 'expo-splash-screen';
+import { useEffect } from 'react';
 import { CycleProvider } from '../components/CycleContext';
+import { ThemeProvider } from '../components/ThemeContext';
+import { UsernameProvider } from '../components/UsernameContext';
 
 export default function RootLayout() {
+  useEffect(() => {
+    async function prepare() {
+      try {
+        await SplashScreen.preventAutoHideAsync();
+      } catch {
+        // Ignore if already prevented or if splash screen is unavailable.
+      }
+    }
+
+    prepare();
+  }, []);
+
   return (
     <ThemeProvider>
       <UsernameProvider>
